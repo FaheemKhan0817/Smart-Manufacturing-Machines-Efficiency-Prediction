@@ -1,0 +1,4 @@
+.env
+smart_manufacturing_machines_efficiency_prediction.egg-info/
+logs/
+__pycache__/
