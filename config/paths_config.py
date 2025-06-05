@@ -8,3 +8,5 @@ CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 RAW_DIR = "artifacts/raw"
 RAW_FILE_PATH = os.path.join(RAW_DIR, "raw.csv")
 
+# Directory for processed data
+PROCESSED_DIR = "artifacts/processed"
