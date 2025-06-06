@@ -2,3 +2,4 @@ pandas
 numpy
 mysql-connector-python
 python-dotenv
+imbalanced-learn
