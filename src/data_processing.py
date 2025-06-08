@@ -87,31 +87,37 @@ class DataProcessing:
             X_test_index = X_test.index
             X_holdout_index = X_holdout.index
 
-            # Scale features
-            X_train_scaled = self.scaler.fit_transform(X_train)
-            X_train_scaled = pd.DataFrame(X_train_scaled, columns=X_train.columns, index=X_train_index)
-
-            X_val_scaled = self.scaler.transform(X_val)
-            X_val_scaled = pd.DataFrame(X_val_scaled, columns=X_val.columns, index=X_val_index)
-
-            X_test_scaled = self.scaler.transform(X_test)
-            X_test_scaled = pd.DataFrame(X_test_scaled, columns=X_test.columns, index=X_test_index)
-
-            X_holdout_scaled = self.scaler.transform(X_holdout)
-            X_holdout_scaled = pd.DataFrame(X_holdout_scaled, columns=X_holdout.columns, index=X_holdout_index)
-
-            # Feature Selection
-            X_train_selected = self.selector.fit_transform(X_train_scaled, y_train)
-            selected_features = X_train_scaled.columns[self.selector.get_support()].tolist()
+            # Feature Selection (before scaling)
+            X_train_selected = self.selector.fit_transform(X_train, y_train)
+            selected_features = X_train.columns[self.selector.get_support()].tolist()
             logger.info("Selected Features: %s", selected_features)
 
-            X_val_selected = self.selector.transform(X_val_scaled)
-            X_test_selected = self.selector.transform(X_test_scaled)
-            X_holdout_selected = self.selector.transform(X_holdout_scaled)
+            X_val_selected = self.selector.transform(X_val)
+            X_test_selected = self.selector.transform(X_test)
+            X_holdout_selected = self.selector.transform(X_holdout)
 
-            # Apply SMOTE to training data only
+            # Convert selected features back to DataFrame to preserve column names
+            X_train_selected = pd.DataFrame(X_train_selected, columns=selected_features, index=X_train_index)
+            X_val_selected = pd.DataFrame(X_val_selected, columns=selected_features, index=X_val_index)
+            X_test_selected = pd.DataFrame(X_test_selected, columns=selected_features, index=X_test_index)
+            X_holdout_selected = pd.DataFrame(X_holdout_selected, columns=selected_features, index=X_holdout_index)
+
+            # Scale the selected features
+            X_train_scaled = self.scaler.fit_transform(X_train_selected)
+            X_train_scaled = pd.DataFrame(X_train_scaled, columns=selected_features, index=X_train_index)
+
+            X_val_scaled = self.scaler.transform(X_val_selected)
+            X_val_scaled = pd.DataFrame(X_val_scaled, columns=selected_features, index=X_val_index)
+
+            X_test_scaled = self.scaler.transform(X_test_selected)
+            X_test_scaled = pd.DataFrame(X_test_scaled, columns=selected_features, index=X_test_index)
+
+            X_holdout_scaled = self.scaler.transform(X_holdout_selected)
+            X_holdout_scaled = pd.DataFrame(X_holdout_scaled, columns=selected_features, index=X_holdout_index)
+
+            # Apply SMOTE to training data only (after scaling)
             smote = SMOTE(random_state=42)
-            X_train_balanced, y_train_balanced = smote.fit_resample(X_train_selected, y_train)
+            X_train_balanced, y_train_balanced = smote.fit_resample(X_train_scaled, y_train)
             logger.info("Balanced Training Class Distribution:\n%s", 
                        pd.Series(y_train_balanced).value_counts().to_dict())
 
@@ -124,15 +130,14 @@ class DataProcessing:
             joblib.dump(X_train_balanced, os.path.join(self.processed_data, 'X_train_balanced.pkl'))
             joblib.dump(y_train_balanced, os.path.join(self.processed_data, 'y_train_balanced.pkl'))
             joblib.dump(sample_weights, os.path.join(self.processed_data, 'sample_weights.pkl'))
-            joblib.dump(X_val_selected, os.path.join(self.processed_data, 'X_val_selected.pkl'))
+            joblib.dump(X_val_scaled, os.path.join(self.processed_data, 'X_val_selected.pkl'))
             joblib.dump(y_val, os.path.join(self.processed_data, 'y_val.pkl'))
-            joblib.dump(X_test_selected, os.path.join(self.processed_data, 'X_test_selected.pkl'))
+            joblib.dump(X_test_scaled, os.path.join(self.processed_data, 'X_test_selected.pkl'))
             joblib.dump(y_test, os.path.join(self.processed_data, 'y_test.pkl'))
-            joblib.dump(X_holdout_selected, os.path.join(self.processed_data, 'X_holdout_selected.pkl'))
+            joblib.dump(X_holdout_scaled, os.path.join(self.processed_data, 'X_holdout_selected.pkl'))
             joblib.dump(y_holdout, os.path.join(self.processed_data, 'y_holdout.pkl'))
             joblib.dump(self.scaler, os.path.join(self.processed_data, 'scaler.pkl'))
             joblib.dump(self.label_encoder, os.path.join(self.processed_data, 'label_encoder.pkl'))
-            joblib.dump(self.selector, os.path.join(self.processed_data, 'selector.pkl'))
             joblib.dump(selected_features, os.path.join(self.processed_data, 'selected_features.pkl'))
 
             logger.info("Data processing completed successfully.")
