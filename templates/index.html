@@ -1,79 +1,45 @@
-<script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
-
-                // Convert sheet to JSON to filter blank rows
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // Filter out blank rows (rows where all cells are empty, null, or undefined)
-                var filteredData = jsonData.filter(row => row.some(filledCell));
-
-                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                // Fallback
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
-                }
-
-                // Convert filtered JSON back to CSV
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
-            }
-        }
-        return gk_fileData[filename] || "";
-        }
-        </script><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Manufacturing Efficiency Prediction</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Smart Manufacturing Efficiency Prediction</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}"/>
 </head>
 <body>
-    <div class="container">
-        <h1>Smart Manufacturing Efficiency Prediction</h1>
-        <p>Enter the values below to predict the efficiency status of a manufacturing machine.</p>
+  <div class="container">
+    <h1 class="fade-in">Smart Manufacturing Efficiency Prediction</h1>
+    <p class="fade-in">Enter the values below to predict the efficiency status of a manufacturing machine.</p>
 
-        <form method="POST">
-            {% for feature in features %}
-                <div class="form-group">
-                    <label for="{{ feature }}">{{ feature }}</label>
-                    {% if feature == 'Operation_Mode' %}
-                        <select name="{{ feature }}" id="{{ feature }}" required>
-                            <option value="Active">Active</option>
-                            <option value="Idle">Idle</option>
-                        </select>
-                    {% else %}
-                        <input type="number" step="any" name="{{ feature }}" id="{{ feature }}" required>
-                    {% endif %}
-                </div>
-            {% endfor %}
-            <button type="submit">Predict</button>
-        </form>
-
-        {% if prediction %}
-            <div class="prediction">
-                <h2>Prediction</h2>
-                <p><strong>Efficiency Status:</strong> {{ prediction }}</p>
-            </div>
-        {% endif %}
+<form method="POST" class="form-row fade-in" id="prediction-form">
+  {% for feature in features %}
+    <div class="form-group">
+      <label for="{{ feature }}">{{ feature.replace('_', ' ') }}</label>
+      {% if feature == 'Operation_Mode' %}
+        <select name="{{ feature }}" id="{{ feature }}" required>
+          <option value="Active">Active</option>
+          <option value="Idle">Idle</option>
+        </select>
+      {% else %}
+        <input type="number" step="any" name="{{ feature }}" id="{{ feature }}" required />
+      {% endif %}
     </div>
+  {% endfor %}
+</form>
+
+<!-- 🔽 Moved below form but above prediction box -->
+<div class="button-wrapper">
+  <button type="submit" form="prediction-form">Predict</button>
+</div>
+
+{% if prediction %}
+  <div class="prediction slide-in">
+    <h2>Prediction</h2>
+    <p><strong>Efficiency Status:</strong> {{ prediction }}</p>
+  </div>
+{% endif %}
+
+  </div>
 </body>
 </html>

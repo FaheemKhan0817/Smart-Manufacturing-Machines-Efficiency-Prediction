@@ -13,21 +13,25 @@ SCALER_PATH = r"C:\MLOps Projects\Smart-Manufacturing-Machines-Efficiency-Predic
 model = joblib.load(MODEL_PATH)
 scaler = joblib.load(SCALER_PATH)
 
-# Raw features the user will input
+# Raw features expected from the form
 RAW_FEATURES = [
-    'Vibration_Hz', 'Packet_Loss_Perc', 'Quality_Control_Defect_Rate_Perc',
-    'Production_Speed_units_per_hr', 'Error_Rate_Perc', 'Operation_Mode',
+    'Vibration_Hz',
+    'Packet_Loss_Perc',
+    'Quality_Control_Defect_Rate_Perc',
+    'Production_Speed_units_per_hr',
+    'Error_Rate_Perc',
+    'Operation_Mode',
     'Predictive_Maintenance_Score'
 ]
 
-# Features expected by the model (10 features)
+# Processed features expected by the model
 SELECTED_FEATURES = [
     'Vibration_Hz', 'Packet_Loss_Perc', 'Quality_Control_Defect_Rate_Perc',
     'Production_Speed_units_per_hr', 'Error_Rate_Perc', 'Mode_Active',
     'Mode_Idle', 'PM_Bin_Low', 'PM_Bin_Medium', 'PM_Bin_High'
 ]
 
-# Labels mapping
+# Map of prediction class labels
 LABELS = {0: "High", 1: "Low", 2: "Medium"}
 
 @app.route("/", methods=["GET", "POST"])
@@ -36,7 +40,7 @@ def index():
 
     if request.method == "POST":
         try:
-            # Collect input data from the form
+            # Collect form input
             input_data = {}
             for feature in RAW_FEATURES:
                 value = request.form.get(feature)
@@ -45,44 +49,40 @@ def index():
                 else:
                     input_data[feature] = float(value)
 
-            # Create a DataFrame for preprocessing
+            # Create DataFrame
             df = pd.DataFrame([input_data])
 
-            # Preprocess the input data
-            # 1. One-hot encode Operation_Mode
+            # One-hot encode Operation_Mode
             df['Mode_Active'] = (df['Operation_Mode'] == 'Active').astype(int)
             df['Mode_Idle'] = (df['Operation_Mode'] == 'Idle').astype(int)
-            df = df.drop(columns=['Operation_Mode'])
+            df.drop(columns=['Operation_Mode'], inplace=True)
 
-            # 2. Bin Predictive_Maintenance_Score
-            bins = [0, 33.33, 66.66, 100]  # Same bins as in training
+            # Bin Predictive_Maintenance_Score
+            bins = [0, 33.33, 66.66, 100]
             labels = ['Low', 'Medium', 'High']
             df['Predictive_Maintenance_Binned'] = pd.cut(
                 df['Predictive_Maintenance_Score'], bins=bins, labels=labels, include_lowest=True
             )
             df = pd.get_dummies(df, columns=['Predictive_Maintenance_Binned'], prefix='PM_Bin')
-            df = df.drop(columns=['Predictive_Maintenance_Score'])
+            df.drop(columns=['Predictive_Maintenance_Score'], inplace=True)
 
-            # 3. Ensure all selected features are present
+            # Ensure all expected features exist
             for feature in SELECTED_FEATURES:
                 if feature not in df.columns:
                     df[feature] = 0
 
-            # 4. Reorder columns to match SELECTED_FEATURES
+            # Reorder to match model
             df = df[SELECTED_FEATURES]
 
-            # 5. Scale the selected features using the loaded scaler
-            input_array = df.values
-            scaled_array = scaler.transform(input_array)
-
-            # 6. Make prediction
-            pred = model.predict(scaled_array)[0]
+            # Scale and predict
+            scaled = scaler.transform(df)
+            pred = model.predict(scaled)[0]
             prediction = LABELS.get(pred, "Unknown")
 
         except Exception as e:
             prediction = f"Error: {str(e)}"
 
-    return render_template("index.html", prediction=prediction, features=RAW_FEATURES)
+    return render_template("index.html", features=RAW_FEATURES, prediction=prediction)
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
