@@ -5,9 +5,11 @@ import pandas as pd
 
 app = Flask(__name__)
 
-# Paths to the model and scaler
-MODEL_PATH = r"C:\MLOps Projects\Smart-Manufacturing-Machines-Efficiency-Prediction\artifacts\model\xgboost_model.pkl"
-SCALER_PATH = r"C:\MLOps Projects\Smart-Manufacturing-Machines-Efficiency-Prediction\artifacts\processed\scaler.pkl"
+
+# Define paths
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = os.path.join(BASE_DIR, "artifacts", "model", "xgboost_model.pkl")
+SCALER_PATH = os.path.join(BASE_DIR, "artifacts", "processed", "scaler.pkl")
 
 # Load the model and scaler
 model = joblib.load(MODEL_PATH)
