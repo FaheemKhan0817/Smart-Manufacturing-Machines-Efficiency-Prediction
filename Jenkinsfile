@@ -32,7 +32,7 @@ pipeline {
         stage('Install Kubectl & ArgoCD CLI') {
             steps {
                 sh '''
-                echo 'installing Kubectl & ArgoCD cli...'
+                echo 'installing Kubectl & ArgoCD cli Setup...'
                 curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
                 chmod +x kubectl
                 mv kubectl /usr/local/bin/kubectl
